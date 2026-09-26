@@ -1,2 +1,20 @@
 # Учебный проект Student1
 Привет! Здесь я буду выкладывать свои домашние задания и учебный код.
+WEB APPLICATION
+Задание 1. Создание структуры Web Application
+Создайте рабочий каталог:
+web-app/makdir projekt
+├── app/makdir app
+├── config/makdir config
+├── logs/makdir logs
+├── backup/makdir backup
+└── scripts/makdir scripts
+Перейдите в созданный каталог.cd/projekt
+Создайте следующие файлы:
+toysh/app/main.py
+toysh/config/app.conf
+toysh/logs/application.log
+toysh/scripts/start.sh
+toysh/README.md
+После создания убедитесь, что все необходимые каталоги и файлы существуют.
+Результат: подготовлена файловая структура приложения.
