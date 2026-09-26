@@ -1,20 +1,99 @@
-# Учебный проект Student1
-Привет! Здесь я буду выкладывать свои домашние задания и учебный код.
-WEB APPLICATION
-Задание 1. Создание структуры Web Application
-Создайте рабочий каталог:
-web-app/makdir projekt
-├── app/makdir app
-├── config/makdir config
-├── logs/makdir logs
-├── backup/makdir backup
-└── scripts/makdir scripts
-Перейдите в созданный каталог.cd/projekt
-Создайте следующие файлы:
-toysh/app/main.py
-toysh/config/app.conf
-toysh/logs/application.log
-toysh/scripts/start.sh
-toysh/README.md
-После создания убедитесь, что все необходимые каталоги и файлы существуют.
-Результат: подготовлена файловая структура приложения.
+( echo "########## КЕЙС 1: WEB APPLICATION ##########" && \
+mkdir -p web-app/{app,config,logs,backup,scripts} && cd web-app && \
+touch app/main.py config/app.conf logs/application.log scripts/start.sh README.md && \
+echo "=== Структура ===" && find . | sort && \
+printf '%s\n' APP_NAME=web-app APP_VERSION=1.0 HOST=0.0.0.0 PORT=8080 LOG_LEVEL=INFO DEBUG=false DATABASE_HOST=localhost DATABASE_PORT=5432 > config/app.conf && \
+echo "=== config/app.conf ===" && cat config/app.conf && \
+printf '%s\n' "WEB APPLICATION" "Application: web-app" "Version: 1.0" "Port: 8080" "Configuration: config/app.conf" "Logs: logs/application.log" "Start script: scripts/start.sh" > README.md && \
+echo "=== README.md ===" && cat README.md && \
+printf '%s\n' 'print("Web Application")' 'print("Version: 1.0")' 'print("Application started")' > app/main.py && \
+echo "=== python3 app/main.py ===" && python3 app/main.py && \
+printf '%s\n' '#!/bin/bash' 'echo "Starting Web Application..."' 'python3 app/main.py' 'echo "Web Application stopped"' > scripts/start.sh && \
+echo "=== Первая попытка запуска ===" && \
+{ ./scripts/start.sh || { echo "Причина: нет права на выполнение"; ls -l scripts/start.sh; chmod +x scripts/start.sh; ls -l scripts/start.sh; }; } && \
+echo "=== Повторный запуск ===" && ./scripts/start.sh && \
+printf '%s\n' \
+'2026-09-22 10:00:01 INFO APPLICATION Application started' \
+'2026-09-22 10:00:02 INFO DATABASE Connection established' \
+'2026-09-22 10:01:15 INFO API GET /users 200' \
+'2026-09-22 10:02:21 INFO AUTH User admin authenticated' \
+'2026-09-22 10:03:11 WARNING API Response time 1800ms' \
+'2026-09-22 10:04:05 INFO API GET /products 200' \
+'2026-09-22 10:05:14 ERROR DATABASE Connection timeout' \
+'2026-09-22 10:05:15 WARNING DATABASE Reconnecting' \
+'2026-09-22 10:05:18 INFO DATABASE Connection established' \
+'2026-09-22 10:06:44 ERROR AUTH Invalid token' \
+'2026-09-22 10:07:11 INFO API POST /orders 201' \
+'2026-09-22 10:08:17 WARNING API Response time 2200ms' \
+'2026-09-22 10:09:31 ERROR DATABASE Query timeout' \
+'2026-09-22 10:10:04 INFO AUTH User operator authenticated' \
+'2026-09-22 10:11:42 ERROR API Internal server error' > logs/application.log && \
+echo "=== logs/application.log ===" && cat logs/application.log ) && \
+( echo && echo "########## КЕЙС 2: PAYMENT SERVICE ##########" && \
+mkdir -p payment-service/{config,data,logs,reports,backup} && cd payment-service && \
+touch config/payment.conf data/transactions.txt logs/payment.log && \
+echo "=== Структура ===" && find . | sort && \
+printf '%s\n' SERVICE_NAME=payment-service SERVICE_VERSION=1.0 CURRENCY=EUR PAYMENT_PROVIDER=TEST MAX_PAYMENT=5000 LOG_LEVEL=INFO > config/payment.conf && \
+cp config/payment.conf backup/payment.conf.bak && \
+echo "=== config/payment.conf ===" && cat config/payment.conf && \
+echo "=== backup/payment.conf.bak ===" && cat backup/payment.conf.bak && \
+printf '%s\n' \
+'10001;SUCCESS;120.50;EUR' '10002;SUCCESS;59.90;EUR' '10003;FAILED;899.00;EUR' '10004;PENDING;250.00;EUR' \
+'10005;SUCCESS;15.99;EUR' '10006;FAILED;1200.00;EUR' '10007;SUCCESS;340.00;EUR' '10008;SUCCESS;78.50;EUR' \
+'10009;PENDING;640.00;EUR' '10010;FAILED;75.00;EUR' '10011;SUCCESS;199.99;EUR' '10012;SUCCESS;25.00;EUR' \
+'10013;FAILED;2500.00;EUR' '10014;PENDING;99.90;EUR' '10015;SUCCESS;450.00;EUR' '10016;FAILED;150.00;EUR' \
+'10017;SUCCESS;70.00;EUR' '10018;SUCCESS;310.50;EUR' '10019;PENDING;1250.00;EUR' '10020;SUCCESS;29.99;EUR' \
+> data/transactions.txt && \
+echo "=== data/transactions.txt ===" && cat data/transactions.txt && \
+printf '%s\n' \
+'10:00:01 INFO Payment service started' \
+10:01:12 INFO Transaction 10001 processed' \
+'10:02:31 INFO Transaction 10002 processed' \
+'10:03:17 ERROR Transaction 10003 declined' \
+'10:04:42 WARNING Transaction 10004 pending' \
+'10:05:14 INFO Transaction 10005 processed' \
+'10:06:11 ERROR Transaction 10006 declined' \
+'10:07:24 INFO Transaction 10007 processed' \
+'10:08:33 WARNING Payment provider response time high' \
+'10:09:02 ERROR Transaction 10010 declined' \
+'10:10:17 INFO Payment provider available' \
+'10:11:44 ERROR Transaction 10013 declined' \
+'10:12:03 WARNING Transaction 10014 pending' \
+'10:13:29 ERROR Transaction 10016 declined' \
+'10:14:55 INFO Payment service healthy' > logs/payment.log && \
+echo "=== logs/payment.log ===" && cat logs/payment.log ) && \
+( echo && echo "########## КЕЙС 3: MONITORING SERVICE ##########" && \
+mkdir -p monitoring-service/{config,logs,alerts,archive,scripts} && cd monitoring-service && \
+touch config/monitoring.conf logs/system.log alerts/alerts.log scripts/check.sh && \
+echo "=== Структура ===" && find . | sort && \
+printf '%s\n' SERVICE_NAME=monitoring CHECK_INTERVAL=30 CPU_THRESHOLD=80 MEMORY_THRESHOLD=85 DISK_THRESHOLD=90 LOG_LEVEL=INFO > config/monitoring.conf && \
+echo "=== config/monitoring.conf ===" && cat config/monitoring.conf && \
+printf '%s\n' \
+'10:00:00 INFO CPU usage=35%' \
+'10:00:30 INFO MEMORY usage=61%' \
+'10:01:00 INFO DISK usage=45%' \
+'10:01:30 WARNING CPU usage=82%' \
+'10:02:00 INFO CPU usage=65%' \
+'10:02:30 WARNING MEMORY usage=88%' \
+'10:03:00 ERROR DATABASE unavailable' \
+'10:03:30 INFO DATABASE available' \
+'10:04:00 INFO CPU usage=44%' \
+'10:04:30 WARNING DISK usage=92%' \
+'10:05:00 ERROR API unavailable' \
+'10:05:30 ERROR DATABASE connection timeout' \
+'10:06:00 INFO API available' \
+'10:06:30 INFO MEMORY usage=63%' \
+'10:07:00 WARNING CPU usage=89%' \
+'10:07:30 ERROR DATABASE connection refused' \
+'10:08:00 INFO DATABASE available' \
+'10:08:30 WARNING MEMORY usage=91%' \
+'10:09:00 ERROR API connection timeout' \
+'10:09:30 INFO SYSTEM healthy' > logs/system.log && \
+echo "=== logs/system.log ===" && cat logs/system.log && \
+printf '%s\n' '#!/bin/bash' 'echo "Monitoring check started"' 'echo "Checking CPU..."' 'echo
+"Checking memory..."' 'echo "Checking disk..."' 'echo "Monitoring check completed"' > scripts/check.sh && \
+echo "=== Права до ===" && ls -l scripts/check.sh && \
+chmod +x scripts/check.sh && \
+echo "=== Права после ===" && ls -l scripts/check.sh && \
+echo "=== ./scripts/check.sh ===" && ./scripts/check.sh ) && \
+echo && echo "########## ГОТОВО: все 3 сервиса созданы ##########" && ls -d web-app payment-service monitoring-service
