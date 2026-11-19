@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Docker — контейнеризация с нуля</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1e1e2e; color: #e6e6f0;
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden;
+  }
+  .slide {
+    display: none; height: 100vh; padding: 5vh 7vw;
+    flex-direction: column; justify-content: center;
+  }
+  .slide.active { display: flex; }
+  h1 { font-size: 3rem; color: #89b4fa; margin-bottom: 1.8rem; }
+  h2 { font-size: 2rem; color: #89b4fa; margin-bottom: 1.3rem; }
+  p, li { font-size: 1.3rem; line-height: 1.5; }
+  ul { padding-left: 2rem; margin: 0.7rem 0; }
+  li { margin-bottom: 0.4rem; }
+  code, .code {
+    font-family: "SF Mono", Menlo, monospace;
+    background: #313244; color: #a6e3a1;
+    padding: 0.1em 0.4em; border-radius: 6px; font-size: 0.85em;
+  }
+  pre {
+    font-family: "SF Mono", Menlo, monospace;
+    background: #11111b; color: #a6e3a1; font-size: 1.02rem;
+    padding: 1rem 1.3rem; border-radius: 10px; margin: 0.8rem 0;
+    overflow-x: auto; line-height: 1.45;
+  }
+  pre .c { color: #6c7086; }
+  pre .k { color: #cba6f7; }
+  .hl { color: #f9e2af; font-weight: 600; }
+  .bad { color: #f38ba8; }
+  .ok { color: #a6e3a1; }
+  .flow { display: flex; align-items: center; gap: 0.7rem; margin: 1rem 0; flex-wrap: wrap; }
+  .box {
+    background: #313244; border: 2px solid #89b4fa; border-radius: 10px;
+    padding: 0.7rem 1.2rem; font-size: 1.1rem; text-align: center;
+  }
+  .box.small { font-size: 0.95rem; padding: 0.4rem 0.8rem; }
+  .arrow { color: #89b4fa; font-size: 1.6rem; }
+  .note { color: #a6adc8; font-size: 1.05rem; margin-top: 1rem; }
+  table { border-collapse: collapse; margin: 0.8rem 0; }
+  th, td { border: 1px solid #45475a; padding: 0.45rem 1rem; font-size: 1.05rem; text-align: left; }
+  th { background: #313244; color: #89b4fa; }
+  #counter { position: fixed; bottom: 2vh; right: 3vw; color: #6c7086; font-size: 1rem; }
+  #hint { position: fixed; bottom: 2vh; left: 3vw; color: #45475a; font-size: 0.95rem; }
+</style>
+</head>
+<body>
+
+<section class="slide">
+  <h1>Docker</h1>
+  <p>Контейнеризация с нуля: что это, как работает, что умеет</p>
+  <p class="note">Основы разработки · теория к лабораторным lab1–lab2</p>
+</section>
+
+<section class="slide">
+  <h2>Проблема: «у меня работало»</h2>
+  <p>Знакомая история:</p>
+  <ul>
+    <li>у разработчика Python 3.8, на сервере 3.11 — <span class="bad">не заводится</span></li>
+    <li>«поставь вот эти 15 пакетов нужных версий» — <span class="bad">инструкция на 3 страницы</span></li>
+    <li>на Windows работает, на Linux — нет</li>
+  </ul>
+  <p>Причина: приложение — это не только код, но и <span class="hl">всё его окружение</span>:
+  интерпретатор, библиотеки, системные пакеты, переменные.</p>
+  <p class="note">Docker упаковывает код <b>вместе с окружением</b> в стандартную коробку — контейнер.</p>
+</section>
+
+<section class="slide">
+  <h2>Аналогия: контейнерные перевозки</h2>
+  <p>До контейнеров грузы возили россыпью: мешки, бочки, ящики — каждый
+  груз по-своему. Потом придумали <span class="hl">стандартный контейнер</span>:</p>
+  <ul>
+    <li>неважно, что внутри — снаружи стандартная коробка</li>
+    <li>один и тот же кран, корабль, грузовик для любого груза</li>
+  </ul>
+  <p>Docker — то же для программ: неважно, Python там или база данных —
+  любой сервер с Docker умеет это <code>run</code>.</p>
+</section>
+
+<section class="slide">
+  <h2>Виртуальная машина vs контейнер</h2>
+  <div class="flow">
+    <div class="box">ВМ<br><small>железо → гипервизор →<br><b>целая ОС</b> на каждую → приложение</small></div>
+    <div class="box">Контейнер<br><small>ОС хоста → Docker →<br><b>изолированный процесс</b></small></div>
+  </div>
+  <table>
+    <tr><th></th><th>ВМ</th><th>Контейнер</th></tr>
+    <tr><td>Запуск</td><td>минуты</td><td>секунды</td></tr>
+    <tr><td>Размер</td><td>гигабайты</td><td>мегабайты</td></tr>
+    <tr><td>Изоляция</td><td>своё ядро (крепче)</td><td>общее ядро ОС</td></tr>
+  </table>
+  <p class="note">Контейнер — это не «маленькая ВМ», а <b>обычный процесс</b> Linux в изоляции.</p>
+</section>
+
+<section class="slide">
+  <h2>Как контейнер изолирован (простыми словами)</h2>
+  <ul>
+    <li><span class="hl">namespaces</span> — «камера-обскура»: процесс видит свои файлы, свою сеть, свои процессы и думает, что он один в системе</li>
+    <li><span class="hl">cgroups</span> — «счётчик ресурсов»: сколько CPU и памяти можно (pro06)</li>
+  </ul>
+  <p>Отсюда следствия:</p>
+  <ul>
+    <li>контейнер на чужой машине ведёт себя <span class="hl">одинаково</span></li>
+    <li>удалил контейнер — система чистая, ничего не «установлено»</li>
+    <li>на одном хосте — десятки сервисов, не мешая друг другу</li>
+  </ul>
+</section>
+
+<section class="slide">
+  <h2>Три главных сущности</h2>
+  <table>
+    <tr><th>Сущность</th><th>Что это</th><th>Аналогия из ООП</th></tr>
+    <tr><td><b>Образ</b> (image)</td><td>неизменный шаблон: код + окружение</td><td>класс</td></tr>
+    <tr><td><b>Контейнер</b></td><td>запущенный экземпляр образа</td><td>объект</td></tr>
+    <tr><td><b>Реестр</b> (registry)</td><td>хранилище образов (Docker Hub)</td><td>репозиторий пакетов</td></tr>
+  </table>
+  <p>Из одного образа можно запустить сколько угодно контейнеров.</p>
+  <pre>docker pull nginx     <span class="c"># образ: реестр → машина</span>
+docker run  nginx     <span class="c"># контейнер: образ → запущенный процесс</span></pre>
+</section>
+
+<section class="slide">
+  <h2>Архитектура Docker</h2>
+  <div class="flow">
+    <div class="box small">клиент<br><code>docker</code></div><span class="arrow">→</span>
+    <div class="box small">Docker daemon<br><small>строит, запускает, хранит</small></div><span class="arrow">⇄</span>
+    <div class="box small">реестр<br><small>Docker Hub</small></div>
+  </div>
+  <ul>
+    <li>команда <code>docker</code> — только клиент, работу делает <span class="hl">демон</span></li>
+    <li>поэтому «Cannot connect to the Docker daemon» = Docker Desktop не запущен</li>
+    <li>на macOS/Windows демон живёт внутри маленькой Linux-ВМ — контейнеры всегда Linux</li>
+  </ul>
+</section>
+
+<section class="slide">
+  <h2>Образы состоят из слоёв</h2>
+  <pre>FROM python:3.8-slim   <span class="c"># слой 1: базовая система</span>
+WORKDIR /app           <span class="c"># слой 2</span>
+COPY app.py .          <span class="c"># слой 3</span>
+CMD ["python","app.py"] <span class="c"># слой 4</span></pre>
+  <ul>
+    <li>каждая инструкция = новый слой поверх предыдущих</li>
+    <li>слои <span class="hl">кэшируются</span>: не изменилось — берётся из кэша (метка CACHED)</li>
+    <li>поэтому изменчивое (код) кладут в конец Dockerfile — проверите сами в task05</li>
+    <li>слои общие между образами: 10 python-образов не съедят место ×10</li>
+  </ul>
+</section>
+
+<section class="slide">
+  <h2>Жизненный цикл контейнера</h2>
+  <div class="flow">
+    <div class="box small">create/run</div><span class="arrow">→</span>
+    <div class="box small">running</div><span class="arrow">→</span>
+    <div class="box small">stopped</div><span class="arrow">→</span>
+    <div class="box small">removed</div>
+  </div>
+  <pre>docker ps        <span class="c"># только живые</span>
+docker ps -a     <span class="c"># все, включая остановленные</span>
+docker stop web  <span class="c"># остановить (контейнер остаётся)</span>
+docker rm web    <span class="c"># удалить совсем</span>
+docker logs web  <span class="c"># что он писал в консоль</span></pre>
+  <p class="note">Важно: контейнер жив, пока жив его главный процесс. Выход из bash = смерть контейнера (task02).</p>
+</section>
+
+<section class="slide">
+  <h2>docker run: главные флаги</h2>
+  <pre>docker run -d --name web -p 8080:80 \
+  -e MODE=prod -v ./data:/data --network my-network --rm nginx</pre>
+  <table>
+    <tr><td><code>-d</code></td><td>фоновый режим</td></tr>
+    <tr><td><code>-it</code></td><td>интерактивный терминал</td></tr>
+    <tr><td><code>--name</code></td><td>своё имя (а не случайное)</td></tr>
+    <tr><td><code>-p 8080:80</code></td><td>порт хоста → порт контейнера</td></tr>
+    <tr><td><code>-e</code></td><td>переменная окружения</td></tr>
+    <tr><td><code>-v</code></td><td>том или файл с хоста внутрь</td></tr>
+    <tr><td><code>--network</code></td><td>в какую сеть подключить</td></tr>
+    <tr><td><code>--rm</code></td><td>удалить после завершения</td></tr>
+  </table>
+</section>
+
+<section class="slide">
+  <h2>Порты: снаружи и внутри</h2>
+  <div class="flow">
+    <div class="box small">браузер<br>localhost:8080</div><span class="arrow">→</span>
+    <div class="box small">хост :8080</div><span class="arrow">→</span>
+    <div class="box small">контейнер :80<br>nginx</div>
+  </div>
+  <ul>
+    <li><code>-p 8080:80</code> — «приходи на 8080 машины, попадёшь на 80 контейнера»</li>
+    <li>без <code>-p</code> порт контейнера снаружи <span class="bad">недоступен</span> — и это хорошо (безопасность)</li>
+    <li>базе данных наружу порт обычно <span class="hl">не пробрасывают</span> — ходят только соседние контейнеры</li>
+  </ul>
+</section>
+
+<section class="slide">
+  <h2>Тома: данные вне контейнера</h2>
+  <p>Контейнер удалили — всё внутри пропало. Для данных есть <span class="hl">тома</span>:</p>
+  <pre>docker volume create mysql-data
+docker run -v mysql-data:/var/lib/mysql mysql:5.7</pre>
+  <ul>
+    <li><b>именованный том</b> (<code>mysql-data</code>) — хранится у Docker, для данных (lab1 task06–07)</li>
+    <li><b>bind mount</b> (<code>-v $(pwd)/app.py:/app.py</code>) — конкретный файл/папка с хоста, для кода при разработке</li>
+  </ul>
+  <p class="note">«Вау-момент» lab1/task07: удаляем контейнер с MySQL, поднимаем новый — база на месте, потому что лежит в томе.</p>
+</section>
+
+<section class="slide">
+  <h2>Сети: контейнеры зовут друг друга по имени</h2>
+  <pre>docker network create my-network
+docker run -d --network my-network --name redis-server redis</pre>
+  <ul>
+    <li>в пользовательской сети работает <span class="hl">DNS по имени контейнера</span>:
+        <code>redis-server</code> вместо IP</li>
+    <li>IP меняются при перезапуске, имена — нет</li>
+    <li>контейнеры в разных сетях друг друга не видят — изоляция</li>
+  </ul>
+  <p class="note">lab1/task09: два Python-контейнера общаются через Redis, зная только его имя.</p>
+</section>
+
+<section class="slide">
+  <h2>Dockerfile: рецепт образа</h2>
+  <table>
+    <tr><th>Инструкция</th><th>Что делает</th></tr>
+    <tr><td><code>FROM</code></td><td>базовый образ — с чего начинаем</td></tr>
+    <tr><td><code>WORKDIR</code></td><td>рабочий каталог внутри</td></tr>
+    <tr><td><code>COPY</code></td><td>скопировать файлы в образ</td></tr>
+    <tr><td><code>RUN</code></td><td>выполнить команду при сборке (pip install и т.п.)</td></tr>
+    <tr><td><code>EXPOSE</code></td><td>документирует порт приложения</td></tr>
+    <tr><td><code>CMD</code></td><td>команда запуска по умолчанию</td></tr>
+    <tr><td><code>ENTRYPOINT</code></td><td>«главная программа» контейнера (pro08)</td></tr>
+  </table>
+  <pre>docker build -t myapp .   <span class="c"># собрать</span>
+docker images           <span class="c"># список образов и размеры</span></pre>
+</section>
+
+<section class="slide">
+  <h2>Docker Compose: оркестр, а не солист</h2>
+  <p>Реальное приложение = несколько контейнеров. Вместо пяти
+  <code>docker run</code> — один файл:</p>
+  <pre><span class="k">services:</span>
+  web:
+    build: .              <span class="c"># собрать из Dockerfile</span>
+    ports: ["5001:5001"]
+    depends_on: [db]      <span class="c"># ждём базу</span>
+  db:
+    image: postgres:13
+    environment: [POSTGRES_PASSWORD=...]
+    volumes: [pgdata:/var/lib/postgresql/data]</pre>
+  <ul>
+    <li>все сервисы автоматически в общей сети и видны по именам (<code>db</code> — это имя сервиса!)</li>
+    <li><code>docker compose up -d</code> поднимает всё, <code>down</code> — убирает</li>
+  </ul>
+</section>
+
+<section class="slide">
+  <h2>Как попасть внутрь работающего контейнера</h2>
+  <table>
+    <tr><th>Способ</th><th>Когда</th></tr>
+    <tr><td><code>docker exec -it web bash</code></td><td>основной: «открыть консоль» в живом контейнере</td></tr>
+    <tr><td><code>docker logs -f web</code></td><td>читать вывод, не заходя внутрь</td></tr>
+    <tr><td>SSH в контейнер</td><td>учебный приём lab2 — в жизни почти не нужен, есть exec</td></tr>
+  </table>
+  <p class="note">exec запускает <b>дополнительный</b> процесс внутри — поэтому exit из него
+  не убивает контейнер (в отличие от exit из главного процесса в task02).</p>
+</section>
+
+<section class="slide">
+  <h2>Реестры образов</h2>
+  <ul>
+    <li><b>Docker Hub</b> — публичный реестр: официальные образы (nginx, postgres, redis…)</li>
+    <li>свой образ публикуем: <code>docker tag</code> → <code>docker push</code> (lab2/task06)</li>
+    <li>можно поднять <span class="hl">свой registry</span> одной командой (pro07) — «частный Docker Hub»</li>
+    <li>Artifactory из прошлой темы — та же идея, но для любых артефактов</li>
+  </ul>
+  <p class="note">Имя образа = адрес: <code>username/myapp-web:1.0</code> — кто, что, какая версия.</p>
+</section>
+
+<section class="slide">
+  <h2>Что ещё умеет Docker (заглянем в pro)</h2>
+  <ul>
+    <li><b>лимиты ресурсов</b> — CPU и память на контейнер (pro06)</li>
+    <li><b>healthcheck</b> — «жив ли сервис на самом деле» (pro03)</li>
+    <li><b>multi-stage сборка</b> — образ без компиляторов (pro02)</li>
+    <li><b>compose override</b> — dev и prod из одной базы (pro09)</li>
+    <li><b>сборка в CI</b> — GitHub Actions собирает образ на каждый push (pro10)</li>
+  </ul>
+</section>
+
+<section class="slide">
+  <h2>Безопасность: минимум на сегодня</h2>
+  <ul>
+    <li>пароли — не в коде и не в git: переменные окружения, секреты CI</li>
+    <li>не публикуйте порты баз данных наружу</li>
+    <li>root внутри контейнера — не «настоящий» root, но лучше non-root пользователь</li>
+    <li>образы из интернета = чужой код: берите официальные (<code>nginx</code>, <code>postgres</code>)</li>
+  </ul>
+</section>
+
+<section class="slide">
+  <h2>Когда Docker НЕ нужен</h2>
+  <ul>
+    <li>разовый скрипт на машине, где всё уже стоит</li>
+    <li>жёсткая изоляция (мульти-тенант с недоверием) — там ВМ крепче</li>
+    <li>GUI-приложения, драйверы, «голое железо»</li>
+  </ul>
+  <p>Docker решает задачу <span class="hl">упаковки и доставки</span> серверного ПО —
+  и делает это отлично.</p>
+</section>
+
+<section class="slide">
+  <h2>Карта лабораторных</h2>
+  <table>
+    <tr><th>Часть</th><th>Задания</th><th>Темы</th></tr>
+    <tr><td>lab1</td><td>task01–task09</td><td>контейнеры, образы, Dockerfile, тома, сети</td></tr>
+    <tr><td>lab2</td><td>task01–task06</td><td>SSH, Compose, Docker Hub</td></tr>
+    <tr><td>pro</td><td>pro01–pro10</td><td>оптимизация, стек, бэкапы, registry, CI</td></tr>
+  </table>
+  <p>Правила те же: в каждой папке README, пропуски <code>____</code> вписываете сами.</p>
+</section>
+
+<section class="slide">
+  <h2>Типовые ошибки</h2>
+  <table>
+    <tr><th>Симптом</th><th>Причина</th></tr>
+    <tr><td>Cannot connect to daemon</td><td>Docker Desktop не запущен</td></tr>
+    <tr><td>port is already allocated</td><td>старый контейнер держит порт: <code>docker ps</code>, <code>rm</code></td></tr>
+    <tr><td>контейнер сразу умер</td><td>главный процесс завершился (bash без -it)</td></tr>
+    <tr><td>файл «пустой» в контейнере</td><td>bind mount из нерасшаренной папки (не из /tmp!)</td></tr>
+    <tr><td>web не видит db</td><td>разные сети / база ещё стартует (гонка, pro03)</td></tr>
+  </table>
+</section>
+
+<section class="slide">
+  <h2>Итоги</h2>
+  <ul>
+    <li>контейнер = код + окружение в стандартной коробке</li>
+    <li>образ — шаблон, контейнер — запущенный экземпляр, реестр — хранилище</li>
+    <li>данные — в томах, связь — через сети по именам</li>
+    <li>Dockerfile собирает образ, Compose поднимает стек</li>
+    <li>одинаково работает у всех — поэтому это стандарт индустрии</li>
+  </ul>
+  <p class="note">Вопросы?</p>
+</section>
+
+<div id="counter"></div>
+<div id="hint">← → — навигация</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  let cur = 0;
+  const counter = document.getElementById('counter');
+  function show(i) {
+    cur = Math.max(0, Math.min(i, slides.length - 1));
+    slides.forEach((s, n) => s.classList.toggle('active', n === cur));
+    counter.textContent = (cur + 1) + ' / ' + slides.length;
+    location.hash = cur;
+  }
+  document.addEventListener('keydown', e => {
+    if (['ArrowRight', ' ', 'PageDown'].includes(e.key)) show(cur + 1);
+    if (['ArrowLeft', 'PageUp'].includes(e.key)) show(cur - 1);
+    if (e.key === 'Home') show(0);
+    if (e.key === 'End') show(slides.length - 1);
+  });
+  document.addEventListener('click', () => show(cur + 1));
+  show(parseInt(location.hash.slice(1)) || 0);
+</script>
+</body>
+</html>
