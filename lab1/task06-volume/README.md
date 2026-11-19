@@ -23,6 +23,15 @@ docker run -d \
   mysql:5.7
 ```
 
+> **Владельцам Mac на Apple Silicon (M1/M2/M3/M4):** у образа `mysql:5.7`
+> нет сборки под ARM, Docker ответит `no matching manifest for
+> linux/arm64/v8`. **Решение: используйте `mysql:8.0`** — есть нативная
+> ARM-сборка. (Вариант `--platform linux/amd64` с 5.7 технически работает,
+> но под эмуляцией всё стартует по несколько минут — на паре это
+> непрактично.)
+>
+> На Windows/Linux с Intel/AMD флаги не нужны, `mysql:5.7` подойдёт.
+
 Разбор:
 - `-e MYSQL_ROOT_PASSWORD=secret` — переменная окружения: пароль root в MySQL;
 - `-v mysql-data:/var/lib/mysql` — том `mysql-data` подключён в каталог,
