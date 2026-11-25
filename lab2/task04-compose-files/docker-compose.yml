@@ -1,6 +1,6 @@
 services:
   web:
-    build: .
+    image: eakremnev207/myapp-web:latest
     ports:
       # ВПИШИТЕ порт приложения (см. app.run в app.py): "ПОРТ:ПОРТ"
       - "5001:5001"
