@@ -39,8 +39,18 @@ docker compose up и убедиться, что приложение работ�
 ## Шаг 4. Логи сервисов
 
     $ docker-compose logs web | tail -5
+web-1  | [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+web-1  |  * Running on all addresses (0.0.0.0)
+web-1  |  * Running on http://127.0.0.1:5001
+web-1  |  * Running on http://172.18.0.3:5001
+web-1  | [33mPress CTRL+C to quit[0m
 
     $ docker-compose logs db | tail -5
+db-1  | 2026-11-25 08:20:57.553 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+db-1  | 2026-11-25 08:20:57.553 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+db-1  | 2026-11-25 08:20:57.577 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+db-1  | 2026-11-25 08:20:57.587 UTC [27] LOG:  database system was shut down at 2026-11-25 08:14:07 UTC
+db-1  | 2026-11-25 08:20:57.595 UTC [1] LOG:  database system is ready to accept connections
 
 ## Шаг 5. Остановка стека
 
