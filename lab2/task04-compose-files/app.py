@@ -8,7 +8,7 @@ app = Flask(__name__)
 def index():
     conn = psycopg2.connect(
         # ВПИШИТЕ имя сервиса базы данных из docker-compose.yml:
-        host="____",
+        host="db",
         database="mydb",
         user="postgres",
         password="mysecretpassword",

@@ -3,15 +3,15 @@ services:
     build: .
     ports:
       # ВПИШИТЕ порт приложения (см. app.run в app.py): "ПОРТ:ПОРТ"
-      - "____"
+      - "5001:5001"
     depends_on:
       - db
 
   db:
     # ВПИШИТЕ образ PostgreSQL версии 13:
-    image: ____
+    image: postgres:13
     environment:
-      POSTGRES_PASSWORD: ____   # ВПИШИТЕ пароль (как в app.py)
+      POSTGRES_PASSWORD: mysecretpassword   # ВПИШИТЕ пароль (как в app.py)
       POSTGRES_DB: mydb
     volumes:
       - pgdata:/var/lib/postgresql/data
