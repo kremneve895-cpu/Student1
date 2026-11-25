@@ -48,7 +48,7 @@ login.docker.com).
 
 Репозиторий появился на hub.docker.com в профиле пользователя:
 hub.docker.com/u/eakremnev207 — репозиторий eakremnev207/myapp-web, тег latest
-(скриншот прилагается).
+(результат выполнения — лог push).
 
 ## Шаг 4. Проверка «на чистой машине»
 
